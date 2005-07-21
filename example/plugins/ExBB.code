@@ -1,3 +1,5 @@
+<!-- $Id: ExBB.code,v 1.2 2005/07/21 16:12:34 Lushe Exp $ -->
+
 <tmpl_ex hidden="1">
 	my($self, $param)= @_;
 	$param->{view} = 1;
@@ -8,13 +10,17 @@
 	my($self, $param)= @_;
 	my $cgi= $self->cgi;
 	my $cf = $self->{config} || die 'cannot config.';
+	my @saveItem= qw(date nickname topic message);
 	my $read= sub {
 		my $fh= $self->fileOpen($cf->{bbdata})
 		     || die "file not open [$cf->{bbdata}].";
 		$param->{posting}= [];
-		for my $line ($fh->getline) {
+		POSTING: while (my $line= $fh->getline) {
+			chomp($line);
 			$line and do {
-				my %d; @d{qw(date name value)}= split /\t/, $line;
+				my %d; @d{@saveItem}= split /\t/, $line;
+				for (@d{@saveItem}) { ! $_ and next(POSTING) }
+				$d{message}=~s{\0} [<br />]g;
 				push @{$param->{posting}}, \%d;
 			 };
 		}
@@ -24,20 +30,24 @@
 	($ENV{REQUEST_METHOD}
 	 && $ENV{REQUEST_METHOD}=~/^post/i
 	 && $cgi->param('write')) ? do {
-	 	my $newrec;
-	 	{
-		 	my %data;
-		 	my $dateFmt= "%04d-%02d-%02d %02d:%02d:%02d";
-		 	for my $key (qw(nickname message)) {
-		 		$data{$key} || return $read->();
+		my $newrec;
+		{
+			my %data;
+			my $dateFmt= "%04d-%02d-%02d %02d:%02d:%02d";
+			for my $key (@saveItem) {
+				$key=~/date/ and next;
+				$data{$key}= $cgi->param($key) || return $read->();
 				1 while $data{$key}=~s/(\s)\s+/$1/s;
 				$data{$key}=~s/(^\s+|\s+$)//sg;
 				! $data{$key} and return $read->();
-		 	}
-			$data{nickname}=~tr/\n//d;
-			my @tm= localtime(time);
+				$data{$key}= $cgi->escapeHTML($data{$key});
+				$key=~/message/
+				 ? $data{$key}=~tr/\n/\0/
+				 : $data{$key}=~tr/\n//d;
+			}
+			my @tm= localtime(time); $tm[5]+= 1900; ++$tm[4];
 			$data{date}= sprintf $dateFmt, reverse(@tm[0..5]);
-			$newrec= (join "\t", @data{qw(date nickname message)}). "\n";
+			$newrec= (join "\t", @data{@saveItem}). "\n";
 		 };
 		my $max= $self->{config}{maxrec} || 50;
 		my $fh= $self->fileOpen("+<$cf->{bbdata}")
@@ -45,7 +55,7 @@
 		eval{ flock($fh, 2) };
 		my @rec= $fh->getlines;
 		unshift @rec, $newrec;
-		splice  @rec, 0, $max;
+		@rec= splice  @rec, 0, $max;
 		truncate $fh, 0; seek $fh, 0, 0;
 		print $fh @rec;
 		$fh->close;
@@ -56,3 +66,4 @@
 		return $read->();
 	 };
 </tmpl_ex>
+

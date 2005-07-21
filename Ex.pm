@@ -3,7 +3,7 @@ package HTML::Template::Ex;
 # Copyright 2004 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno <mizuno@beeflag.com>
 #
-# $Id: FormField.pm,v 1.11 2004/08/16 00:32:33 Lushe Exp $
+# $Id: Ex.pm,v 1.1 2005/07/21 15:13:10 Lushe Exp $
 #
 use 5.004;
 use strict;
@@ -11,7 +11,7 @@ use strict;
 use base qw(HTML::Template);
 use Carp qw(croak);
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 my $ErrstrStyle= q{background:#000; color:#FFF; font-size:13px;};
 sub initStyle { $ErrstrStyle= $_[1] }
@@ -191,17 +191,17 @@ The value substituted for the HASH for the parameter definition can be referred 
 
 B<Example of template.>
 
-    <tmpl_ex>
-      my($self, $param)= @_;
-      $param->{banban}= '<b>banban</b>';
-      "My Object = ". ref($self)
-    </tmpl_ex>
-    --- <tmpl_var name="banban"> ---
+  <tmpl_ex>
+    my($self, $param)= @_;
+    $param->{banban}= '<b>banban</b>';
+    "My Object = ". ref($self)
+  </tmpl_ex>
+  --- <tmpl_var name="banban"> ---
 
 B<When you do output.>
 
-    My Object = *OBJECT-NAME
-    --- <b>banban</b> ---
+  My Object = *OBJECT-NAME
+  --- <b>banban</b> ---
 
 =item *
 
@@ -209,11 +209,11 @@ B<I>f the return value of the code is an array and doesn't exist, <tmpl_var *NAM
 
 B<Example of template.>
 
-    <tmpl_ex> "<h1>result string.</h1>"; </tmpl_ex>
+  <tmpl_ex> "<h1>result string.</h1>"; </tmpl_ex>
 
 B<When you do output.>
 
-    <h1>result string.</h1>
+  <h1>result string.</h1>
 
 =item *
 
@@ -222,13 +222,13 @@ B<P>lease use and refer to <tmpl_var *NAME> for the substituted value.
 
 B<Example of template.>
 
-    <tmpl_ex name="foge"> "<b>result string.</b>"; </tmpl_ex>
-    --- <tmpl_var name="foge"> ---
+  <tmpl_ex name="foge"> "<b>result string.</b>"; </tmpl_ex>
+  --- <tmpl_var name="foge"> ---
 
 B<When you do output.>
 
-    <b>result string.</b>
-    --- <b>result string.</b> ---
+  <b>result string.</b>
+  --- <b>result string.</b> ---
 
 =item *
 
@@ -236,12 +236,12 @@ B<W>hen the thing that the return value is buried under the position is not hope
 
 B<Example of template.>
 
-    <tmpl_ex name="foge" hidden="1"> "<b>result string.</b>"; </tmpl_ex>
-    --- <tmpl_var name="foge"> ---
+  <tmpl_ex name="foge" hidden="1"> "<b>result string.</b>"; </tmpl_ex>
+  --- <tmpl_var name="foge"> ---
 
 B<When you do output.>
 
-    --- <b>result string.</b> ---
+  --- <b>result string.</b> ---
 
 =item *
 
@@ -250,16 +250,16 @@ B<P>lease use and refer to <tmpl_loop *NAME> for this value.
 
 B<Example of template.>
 
-    <tmpl_ex name="array">
-      my @array= ({ name=> 'name1' }, { name=> 'name2' });
-      return \@array;
-    </tmpl>
-    <tmpl_loop><div>name: <tmpl_var name="name"></div></tmpl_loop>
+  <tmpl_ex name="array">
+    my @array= ({ name=> 'name1' }, { name=> 'name2' });
+    return \@array;
+  </tmpl>
+  <tmpl_loop name="array"><div>name: <tmpl_var name="name"></div></tmpl_loop>
 
 B<When you do output.>
 
-    <div>name: name1</div>
-    <div>name: name2</div>
+  <div>name: name1</div>
+  <div>name: name2</div>
 
 =item *
 
@@ -267,11 +267,11 @@ B<T>he escape option to hand to HTML::Template to output it after it escapes in 
 
 B<Example of template.>
 
-    <tmpl_ex escape="html"> "<h1>result string.</h1>"; </tmpl_ex>
+  <tmpl_ex escape="html"> "<h1>result string.</h1>"; </tmpl_ex>
 
 B<When you do output.>
 
-    &lt;result string.&gt;
+  &lt;result string.&gt;
 
 =back
 
@@ -285,12 +285,12 @@ B<T>he parameter value of the template inside can be set with <tmpl_set name='..
 
 B<Example of template.>
 
-    <tmpl_set name="page_title" value="my page title">
-    <h1><tmpl_var name="page_title"></h1>
+  <tmpl_set name="page_title" value="my page title">
+  <h1><tmpl_var name="page_title"></h1>
 
 B<When you do output.>
 
-    <h1>my page title</h1>
+  <h1>my page title</h1>
 
 =back
 
@@ -305,13 +305,13 @@ B<T>he parameter to call the environment variable when the setup_env option is m
 
 B<Example of template.>
 
-    <div>HTTP_REFERER: <tmpl_var name="env_http_referer"></div>
-    <div>REMOTE_ADDR : <tmpl_var name="env_remote_addr"></div>
+  <div>HTTP_REFERER: <tmpl_var name="env_http_referer"></div>
+  <div>REMOTE_ADDR : <tmpl_var name="env_remote_addr"></div>
 
 B<When you do output.>
 
-    <div>HTTP_REFERER: http://....... </div>
-    <div>REMOTE_ADDR : 0.0.0.0</div>
+  <div>HTTP_REFERER: http://....... </div>
+  <div>REMOTE_ADDR : 0.0.0.0</div>
 
 =back
 
@@ -328,9 +328,9 @@ B<P>lease pass in the first argument and pass the option to a suitable object an
 
 B<Example of code.>
 
-    my $self= bless {}, __PACKAGE__;
-    my $ex= HTML::Template::Ex
-            -> new ($self, { filename=> 'foooo.tmpl', setup_env=> 1 });
+  my $self= bless {}, __PACKAGE__;
+  my $ex= HTML::Template::Ex
+          -> new ($self, { filename=> 'foooo.tmpl', setup_env=> 1 });
 
 =back
 
@@ -382,9 +382,9 @@ Please refer to the document of HTML::Template for details.
 
 B<A>bout the option to give to the constructor.
 
-    global_vars, compulsorily becomes effective.
-    die_on_bad_params, strict, file_cache, shared_cache, compulsorily becomes invalid.
-    cache, is being compulsorily invalidated now. 
+global_vars, compulsorily becomes effective.
+die_on_bad_params, strict, file_cache, shared_cache, compulsorily becomes invalid.
+cache, is being compulsorily invalidated now. 
 
 =item *
 
@@ -393,19 +393,20 @@ B<A>bout order by which EX-Code is evaluated.
 Though it is sequentially evaluated on usually. The priority level lowers more than EX-Code in the template that is included, and read mainly described when included as for <tmpl_include *NAME>.
 
 B<Example of template(1).>
-    <div><tmpl_ex> "tmpl-1: ". ++$_[0]->{mycount} </tmpl_ex></div>
-    <tmpl_include name="template(2)">
-    <div><tmpl_ex> "tmpl-2: ". ++$_[0]->{mycount} </tmpl_ex></div>
+
+  <div><tmpl_ex> "tmpl-1: ". ++$_[0]->{mycount} </tmpl_ex></div>
+  <tmpl_include name="template(2)">
+  <div><tmpl_ex> "tmpl-2: ". ++$_[0]->{mycount} </tmpl_ex></div>
 
 B<Example of template(2).>
 
-    <div><tmpl_ex> "inc-1: ". ++$_[0]->{mycount} </tmpl_ex></div>
+  <div><tmpl_ex> "inc-1: ". ++$_[0]->{mycount} </tmpl_ex></div>
 
 B<When you do output.>
 
-    <div>tmpl-1: 1</div>
-    <div>inc-1: 3</div>
-    <div>tmpl-2: 2</div>
+  <div>tmpl-1: 1</div>
+  <div>inc-1: 3</div>
+  <div>tmpl-2: 2</div>
 
 =item *
 
@@ -429,7 +430,7 @@ Please give enough security countermeasures on the project code side when actual
 
 =head1 BUGS
 
- When you find a bug, please email me (L<mizunoE<64>beeflag.com>) with a light heart.
+When you find a bug, please email me (L<mizunoE<64>beeflag.com>) with a light heart.
 
 
 =head1 SEE ALSO

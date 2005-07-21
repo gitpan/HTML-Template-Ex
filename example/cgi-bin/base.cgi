@@ -4,7 +4,7 @@ package ExBase;
 # Copyright 2004 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno <mizuno@beeflag.com>
 #
-# $Id: FormField.pm,v 1.11 2004/08/16 00:32:33 Lushe Exp $
+# $Id: base.cgi,v 1.2 2005/07/21 16:12:28 Lushe Exp $
 #
 # Usage:
 #
@@ -17,23 +17,27 @@ package ExBase;
 use strict;
 # use lib qw(/home/exbase/lib);
 
-my $Prefix= '/home/exbase';
-my $VRsite= '/home/exbase/vrsite';
+my $Prefix  = '/home/exbase';
+my $VRsite  = '/home/exbase/vrsite';
+my $REVISION= q$Id: base.cgi,v 1.2 2005/07/21 16:12:28 Lushe Exp $;
 
 my %C= (
  title    => 'ExBase',
- cgiPath  => '/cgi-bin/base.cgi',
+ cgiPath  => '/base.cgi',
  siteRoot => '/',
+ charset  => 'euc-jp',
  prefix   => $Prefix,
  VRsite   => $VRsite,
  indexName=> 'index.html',
- charset  => 'euc-jp',
  options  => {
   path=> ["$Prefix/plugins"],
   },
+ REVISION => $REVISION,
  );
 
-ExBase::Core->run(%C);
+my $apr= shift || undef;
+# $apr= undef; ## It might have to be 'undef' for mod_perl2.
+ExBase::Core->run($apr, %C);
 
 
 package ExBase::Core;
@@ -43,18 +47,17 @@ use Jcode;
 use FileHandle;
 use HTML::Template::Ex;
 
-local $^W = 0;
-
 sub cgi { $_[0]->{cgi} }
 sub eucConv { defined($_[1]) ? Jcode->new($_[1])->euc: "" }
 
 sub run {
-	my($class, %conf)= @_;
-	my $cgi = $conf{cgi}= CGI->new;
+	my($class, $apr, %conf)= @_;
+	my $cgi = $conf{cgi}= CGI->new($apr);
 	my $base= bless \%conf, $class;
 	my($path, $file)=
-	  ($ENV{QUERY_STRING} && $ENV{QUERY_STRING}=~/^([^\&\;]+)/)
-	    ? $base->pathCuter($1): ('/', $base->{indexName});
+	  ($ENV{QUERY_STRING} && $ENV{QUERY_STRING}=~/^([^\&\;]+)/) ? $base->pathCuter($1):
+	  $cgi->param('path') ? $base->pathCuter($cgi->param('path'))
+	                      : ('/', $base->{indexName});
 	$cgi->charset($conf{charset});
 	(-e "$base->{VRsite}$path$file" && -f _)
 	 ? do { $base->execute($cgi, $path, $file) }
@@ -62,7 +65,8 @@ sub run {
 }
 sub execute {
 	my($base, $cgi, $path, $file)= @_;
-	$base->{currentUri} = "$base->{cgiPath}?$path$file";
+	$base->{currentPath}= "$path$file";
+	$base->{currentUri} = "$base->{cgiPath}?$base->{currentPath}";
 	my $Vars= $cgi->Vars;
 	while (my($name, $value)= each %$Vars) {
 		$value=~tr/\t/ /;
@@ -71,7 +75,7 @@ sub execute {
 	}
 	my @path= ("$base->{VRsite}$path", @{$base->{options}{path}});
 	$base->{___tpOptions}=
-	{ path=> \@path, filename => $file, assosiate=> [$cgi] };
+	{ path=> \@path, filename => $file, associate=> [$cgi] };
 	my $tmpl;
 	eval{ $tmpl= HTML::Template::Ex->new($base, $base->{___tpOptions}) };
 	print $cgi->header;
@@ -79,10 +83,13 @@ sub execute {
 		print "Internal Server Error: $@";
 	 }: do {
 		$tmpl->param({
-		 title     => $base->{title},
-		 cgiPath   => $base->{cgiPath},
-		 siteRoot  => $base->{siteRoot},
+		 title=> $base->{title},
+		 cgiPath=> $base->{cgiPath},
+		 siteRoot=> $base->{siteRoot},
 		 currentUri=> $base->{currentUri},
+		 currentPath=> $base->{currentPath},
+		 scriptVersion=> sub { $base->scriptVersion },
+		 supportURL=> 'http://luuu.net/exbase/',
 		 });
 		print $tmpl->output;
 	 };
@@ -99,10 +106,13 @@ sub pathCuter {
 	  $path=~m{^(/.*?)([^/]+)$} ? ($1, $2): ($path, $base->{indexName});
 	(($dir || '/'), $file);
 }
+sub scriptVersion { $_[0]->{REVISION}=~/v\s+([\.\d]+)/; "ExBase V$1" }
 
 1;
 
-__END__
+#-------------------------------------------------------------------------------
+
+=pod
 
 =head1 NAME
 
@@ -126,3 +136,5 @@ This program is free software; you can redistribute it and/or modify it under
 =head1 AUTHOR
 
 Masatoshi Mizuno, <mizunoE<64>beeflagE<46>com>
+
+=cut

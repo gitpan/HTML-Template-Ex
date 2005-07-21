@@ -6,5 +6,6 @@ README
 test.pl
 example/cgi-bin/base.cgi
 example/data/bbs.db
+example/htdocs/exbase.css
 example/plugins/ExBB.code
 example/vrsite/index.html

@@ -1,16 +1,17 @@
+<!-- $Id: index.html,v 1.2 2005/07/21 16:12:38 Lushe Exp $ -->
 
 <tmpl_ex hidden="1">
 my($self)= @_;
 $self->{config}= {
 
- title => 'ExBB',                        #> Title of ExBB.
+ title => 'ExBB',  #> Title of ExBB.
+ maxrec=> '100',   #> The maximum number of preservation data.
  bbdata=> "$self->{prefix}/data/bbs.db", #> Place of data that ExBB uses.
- maxrec=> 100,                           #> The maximum number of preservation data.
 
  };
 </tmpl_ex>
 
-<tmpl_include name="ExBB-core.code">
+<tmpl_include name="ExBB.code">
 
 <html>
 <head>
@@ -22,16 +23,47 @@ $self->{config}= {
 <h1 class="pageHeader"><tmpl_var name=title></h1>
 <tmpl_if name="view">
 
- <tmpl_var name=currentUri>
+ <table class="postingForm">
  <form method="post" action="<tmpl_var name=currentUri>">
  <input type="hidden" name="write" value="1" />
- <input type="text" name="nickname" maxlength="20"<tmpl_if name=nickname> value="<tmpl_var name=nickname escape=html>"</tmpl_if> />
- <textarea name="message" cols="60" rows="10"><tmpl_if name=message><tmpl_var name=message escape=html></tmpl_if></textarea>
- <input type="submit" value=" еп о© " />
+ <tr><th align="right">NickName:</th><td>
+  <input type="text" name="nickname" size="30" maxlength="20" class="textField"<tmpl_if name=nickname> value="<tmpl_var name=nickname escape=html>"</tmpl_if> />
+ </td></tr>
+ <tr><th align="right">Topic:</th><td>
+  <input type="text" name="topic" size="50" maxlength="50" class="textField"<tmpl_if name=topic> value="<tmpl_var name=topic escape=html>"</tmpl_if> />
+ </td></tr>
+ <tr><th align="right" valign="top">Message:</th><td>
+  <textarea name="message" cols="60" rows="10" class="textArea"><tmpl_if name=message><tmpl_var name=message escape=html></tmpl_if></textarea>
+ </td></tr>
+ <tr><th>&nbsp;</th><td>
+  <input type="submit" value=" Posting " class="postButton" />
+ </td></tr>
  </form>
+ </table>
+
+ <tmpl_loop name=posting>
+  <div class="postMsg">
+  <h2><tmpl_var name=topic></h2>
+  <table><tr>
+   <th class="postNick">
+    <div class="postDate"><tmpl_var name=date></div>
+    <tmpl_var name=nickname>
+   </th>
+   <td class="postValue"><tmpl_var name=message></td>
+  </tr></table>
+  </div>
+ </tmpl_loop>
 
 <tmpl_else>
 
+ <div class="completePost">
+ The contribution was accepted. Hold on, please .....
+ </div>
+
 </tmpl_if>
+<hr size="1" color="#006699">
+<div class="scriptVersion">
+<a href="<tmpl_var name=supportURL>" target="_blank"><tmpl_var name=scriptVersion></a>
+</div>
 </body>
 </html>

@@ -1,0 +1,74 @@
+/* -- $Id: exbase.css,v 1.1 2005/07/21 16:09:10 Lushe Exp $ -- */
+
+body { margin:0; }
+img  { border:0; }
+
+.textField {
+ border:#AAA solid 1px;
+ }
+.textArea {
+ border:#AAA solid 1px;
+ }
+.postButton {
+ background:#EEE;
+ border:#777 solid 1px;
+ }
+
+.pageHeader {
+ padding:3 0 0 20;
+ background:#069;
+ color:#FFF;
+ font:bold 3.0em Times;
+ border-bottom:#036 solid 1px;
+ }
+.postingForm {
+ margin:10;
+ }
+.postMsg {
+ margin:10;
+ padding:10;
+ border-top:#069 solid 5px;
+ }
+.postMsg h2 {
+ margin:0;
+ padding-left:10;
+ font:bold 1.2em Times,sans-serif;
+ }
+.postMsg table {
+ margin:0;
+ width:90%;
+ height:100;
+ }
+.postNick {
+ width:80;
+ padding:5;
+ background:#DBF1F5;
+ text-align:right;
+ vertical-align:top;
+ white-space:nowrap;
+ }
+.postDate {
+ font:normal 10px Times,sans-serif;
+ white-space:nowrap;
+ }
+.postValue {
+ padding:5;
+ border:#A5E5E9 solid 3px;
+ vertical-align:top;
+ }
+.completePost {
+ margin:30;
+ padding:15;
+ background:#E9E9DD;
+ font:bold 1.3em Times,sans-serif;
+ border:#95816C solid 3px;
+ }
+.scriptVersion {
+ padding-right:20;
+ text-align:right;
+ }
+.scriptVersion a {
+ color:#333;
+ text-decoration:none;
+ font:bold 12px Times,sans-serif;
+ }
