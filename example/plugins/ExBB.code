@@ -1,0 +1,58 @@
+<tmpl_ex hidden="1">
+	my($self, $param)= @_;
+	$param->{view} = 1;
+	$self->{config}{title} and $param->{title}= $self->{config}{title};
+</tmpl_ex>
+
+<tmpl_ex name="view" hidden="1">
+	my($self, $param)= @_;
+	my $cgi= $self->cgi;
+	my $cf = $self->{config} || die 'cannot config.';
+	my $read= sub {
+		my $fh= $self->fileOpen($cf->{bbdata})
+		     || die "file not open [$cf->{bbdata}].";
+		$param->{posting}= [];
+		for my $line ($fh->getline) {
+			$line and do {
+				my %d; @d{qw(date name value)}= split /\t/, $line;
+				push @{$param->{posting}}, \%d;
+			 };
+		}
+		$fh->close;
+		return 1;
+	 };
+	($ENV{REQUEST_METHOD}
+	 && $ENV{REQUEST_METHOD}=~/^post/i
+	 && $cgi->param('write')) ? do {
+	 	my $newrec;
+	 	{
+		 	my %data;
+		 	my $dateFmt= "%04d-%02d-%02d %02d:%02d:%02d";
+		 	for my $key (qw(nickname message)) {
+		 		$data{$key} || return $read->();
+				1 while $data{$key}=~s/(\s)\s+/$1/s;
+				$data{$key}=~s/(^\s+|\s+$)//sg;
+				! $data{$key} and return $read->();
+		 	}
+			$data{nickname}=~tr/\n//d;
+			my @tm= localtime(time);
+			$data{date}= sprintf $dateFmt, reverse(@tm[0..5]);
+			$newrec= (join "\t", @data{qw(date nickname message)}). "\n";
+		 };
+		my $max= $self->{config}{maxrec} || 50;
+		my $fh= $self->fileOpen("+<$cf->{bbdata}")
+		     || die "file not open [$cf->{bbdata}].";
+		eval{ flock($fh, 2) };
+		my @rec= $fh->getlines;
+		unshift @rec, $newrec;
+		splice  @rec, 0, $max;
+		truncate $fh, 0; seek $fh, 0, 0;
+		print $fh @rec;
+		$fh->close;
+		$param->{refresh_header}=
+		qq{<meta http-equiv="refresh" content="1;url=$self->{currentUri}" />};
+		return 0;
+	 }: do {
+		return $read->();
+	 };
+</tmpl_ex>

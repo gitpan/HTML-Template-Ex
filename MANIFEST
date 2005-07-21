@@ -1,0 +1,10 @@
+Changes
+Ex.pm
+Makefile.PL
+MANIFEST
+README
+test.pl
+example/cgi-bin/base.cgi
+example/data/bbs.db
+example/plugins/ExBB.code
+example/vrsite/index.html

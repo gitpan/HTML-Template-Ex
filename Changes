@@ -1,0 +1,6 @@
+Revision history for Perl extension HTML::Template::Ex.
+
+0.01  Wed Jul 20 16:33:07 2005
+	- original version; created by h2xs 1.21 with options
+		-A HTML::Template::Ex
+
