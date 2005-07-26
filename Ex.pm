@@ -3,15 +3,19 @@ package HTML::Template::Ex;
 # Copyright 2004 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno <mizuno@beeflag.com>
 #
-# $Id: Ex.pm,v 1.1 2005/07/21 15:13:10 Lushe Exp $
+# $Id: Ex.pm,v 1.2 2005/07/26 19:39:35 Lushe Exp $
 #
 use 5.004;
 use strict;
 # use warnings;
 use base qw(HTML::Template);
+use Digest::MD5 qw(md5_hex);
 use Carp qw(croak);
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
+
+my $GetCharSetRegix=
+ q{<meta.+?content=[\'\"]text/html\s*\;\s*charset=([A-Za-z0-9\-_]+)[\'\"].*?/?\s*>};
 
 my $ErrstrStyle= q{background:#000; color:#FFF; font-size:13px;};
 sub initStyle { $ErrstrStyle= $_[1] }
@@ -19,12 +23,11 @@ sub initStyle { $ErrstrStyle= $_[1] }
 sub new {
 	my $class= shift;
 	my $base = shift || HTML::Template::Ex::DummyObject->new;
-	my $opt= shift || croak __PACKAGE__.'::new: There is no argument.';
-	my %opt= ref($opt) eq 'HASH'
+	my $opt  = shift || croak __PACKAGE__.'::new: There is no argument.';
+	my %opt  = ref($opt) eq 'HASH'
 	 ? %$opt
 	 : croak __PACKAGE__.'::new: Argument is not a HASH reference.';
 	##
-	$opt{cache}= 0; ## Because it has not corresponded to the 'cache' mode yet.
 	$opt{global_vars}= 1;
 	$opt{die_on_bad_params}= $opt{strict}= $opt{file_cache}= $opt{shared_cache}= 0;
 	##
@@ -37,31 +40,103 @@ sub new {
 		 ? do { croak __PACKAGE__.q{::new: Bad format for 'filter'} }
 		 : do {};
 	 };
-	my($self, %param, %temp);
+	my($self, %param, %mark, %order, %temp);
 	$opt{_ex_params}= \%param;
-	$opt->{setup_env} and do {
+	$opt{_ex_orders}= \%order;
+	$opt{_ex_mark}  = \%mark;
+	$opt{setup_env} and do {
 		for my $key (keys %ENV)
 		{ $param{"env_$key"}= sub { $ENV{$key} || "" } }
 	 };
+	$opt{_ex_ident}= substr(md5_hex(time(). {}. rand()), 0, 32);
+	$opt{_ex_base_object}= $base;
 	my $filter= $opt{exec_off}
 	 ? sub { &_offFilter(\%param, @_) }
-	 : sub { &_exFilter($base, \%param, \%temp, @_) };
+	 : sub { &_exFilter($base, \%opt, \%temp, @_) };
 	push @{$opt{filter}}, { format=> 'scalar', sub=> $filter };
 	eval{ $self= HTML::Template::new($class, %opt) };
-	$@ ? croak $@: $self;
+	$@ and croak $@;
+	$opt{cache} and $self->{_ex_charset}= pop @{$self->{parse_stack}} || "";
+	$self;
 }
 sub output {
-	$_[0]->{options}{_ex_params}
-	  and HTML::Template::param($_[0], $_[0]->{options}{_ex_params});
-	HTML::Template::output(@_);
+	my($self)= @_;
+	my $parse_stack= $self->{parse_stack};
+	my $param_map  = $self->{param_map};
+	my $options    = $self->{options};
+	my($ex_mark, $ex_param, $ex_order);
+	$options->{cache} ? do {
+		$ex_mark = pop @$parse_stack;
+		$ex_param= pop @$parse_stack;
+		$ex_order= pop @$parse_stack;
+	 }: do {
+		$ex_mark = $options->{_ex_mark}   || {};
+		$ex_param= $options->{_ex_params} || {};
+		$ex_order= $options->{_ex_orders} || {};
+	 };
+	$self->param($ex_mark);
+	my $base = $options->{_ex_base_object};
+	my %param= %$ex_param;
+	my $cnt;
+	for my $v (@$parse_stack) {
+		ref($v) eq 'HTML::Template::VAR' and do {
+			my $hash= $ex_order->{$$v} || next;
+			++$cnt;
+			my $result;
+			eval{ $result= $hash->{function}->($base, \%param) };
+			($@ && $@=~/(.+)/) ? do {
+				my $errstr= $1;
+				$errstr=~s{\s+in use at .+?/HTML/Template/Ex.pm line \d+} [];
+				$errstr=~s{\s+<GEN0> line \d+\.\s*} []i;
+				$errstr=~s{\s+\(eval \d+\)} []i;
+				$param{$$v}= qq{<div style="$ErrstrStyle">}
+				.  &_escape_html($errstr). qq{ from &lt;TMPL_EX($cnt)&gt;</div>};
+			 }: do {
+				ref($result) eq 'ARRAY' ? do {
+					$param{$$v}= "";
+					$hash->{key_name} and $param{$hash->{key_name}}= $result;
+				 }: do {
+					$param{$$v}= $hash->{hidden} ? "": ($result || "");
+					$hash->{key_name} and $param{$hash->{key_name}}= $result;
+				 };
+			 };
+		 };
+	}
+	HTML::Template::param($self, \%param);
+	my $result= HTML::Template::output(@_);
+	$options->{cache} and do {
+		push @$parse_stack, $ex_order;
+		push @$parse_stack, $ex_param;
+		push @$parse_stack, $ex_mark;
+		push @$parse_stack, ($self->{_ex_charset} || "");
+	 };
+	$result;
+}
+sub charset { $_[0]->{_ex_charset} || "" }
+
+sub _escape_html {
+	local($_)= @_;
+	# straight from the CGI.pm bible.
+	s/&/&amp;/g;
+	s/\"/&quot;/g; #"
+	s/>/&gt;/g;
+	s/</&lt;/g;
+	s/'/&#39;/g; #'
+	$_;
+}
+sub _call_filters {
+	my($self, $html)= @_;
+	$self->{options}{encoder} and $self->{options}{encoder}->($html);
+	$$html=~m{$GetCharSetRegix}i and $self->{_ex_charset}= $1;
+	HTML::Template::_call_filters(@_);
 }
 sub _exFilter {
-	my($base, $param, $temp, $text)= @_;
+	my($base, $opt, $temp, $text)= @_;
 	$$text=~s{<tmpl_ex(\s+[^>]+\s*)?>(.+?)</tmpl_ex[^>]*>}
-	         [&_replaceEx($base, $2, $1, $param, $temp)]isge;
+	         [&_replaceEx($1, $2, $base, $opt, $temp)]isge;
 	$$text=~m{(?:<tmpl_ex[^>]*>|</tmpl_ex[^>]*>)}
 	  and croak q{At least one <TMPL_EX> not terminated at end of file!};
-	$$text=~s{<tmpl_set([^>]+)>} [&_replaceSet($1, $param)]isge;
+	$$text=~s{<tmpl_set([^>]+)>} [&_replaceSet($1, $opt->{_ex_params})]isge;
 }
 sub _offFilter {
 	my($param, $text)= @_;
@@ -81,32 +156,30 @@ sub _replaceSet {
 	"";
 }
 sub _replaceEx {
-	my($base, $code, $opt, $param, $temp)= @_;
-	my($name, $hidden); my $escape= "";
-	$opt and do {
-		$opt=~/name=[\"\']?([^\s\"\']+)/   and $name  = lc($1);
-		$opt=~/escape=[\"\']?([^\s\"\']+)/ and $escape= qq{ escape="$1"};
-		$opt=~/hidden=[\"\']?([^\s\"\']+)/ and $hidden= 1;
+	my($tag, $code, $base, $opt, $temp)= @_;
+	my($exec, %attr);
+	my $escape= my $default= "";
+	$tag and do {
+		$tag=~/name=[\"\']?([^\s\"\']+)/    and $attr{key_name}= lc($1);
+		$tag=~/hidden=[\"\']?([^\s\"\']+)/  and $attr{hidden}= 1;
+		$tag=~/escape=[\"\']?([^\s\"\']+)/  and $escape = qq{ escape="$1"};
+		$tag=~/default=[\"\']?([^\s\"\']+)/ and $default= qq{ default="$1"};
 	 };
-	++$temp->{count};
-	$name ||= "__execute$temp->{count}";
-	eval{
-		my $exec;
-		eval"\$exec= sub { $code }";
-		$param->{$name}= $exec->($base, $param) || "";
-	 };
-	($@ && $@=~/(.+)/) ? do {
-		my $errstr= $1;
-		$errstr=~s{ in use at .+?/HTML/Template/Ex.pm line \d+} [];
-		return qq{<div style="$ErrstrStyle">}
-		     . qq{ $errstr &lt;TMPL_EX($temp->{count})&gt;}
-		     . qq{</div>};
-	 }: do {
-		return (ref($param->{$name}) eq 'ARRAY' || $hidden)
-		  ? "": qq{<tmpl_var name="$name"$escape>};
-	 };
+	my $ident= qq{__\$ex_$opt->{_ex_ident}\$}. (++$temp->{count}). q{$__};
+	eval"\$exec= sub { $code }";
+	$attr{function}= sub { $exec->(@_) || "" };
+	$opt->{_ex_orders}{$ident}= \%attr;
+	$opt->{_ex_mark}{$ident}  = $ident;
+	qq{<tmpl_var name="$ident"$escape$default>};
 }
-
+sub _commit_to_cache {
+	my($self)= @_;
+	push @{$self->{parse_stack}}, $self->{options}{_ex_orders};
+	push @{$self->{parse_stack}}, $self->{options}{_ex_params};
+	push @{$self->{parse_stack}}, $self->{options}{_ex_mark};
+	push @{$self->{parse_stack}}, ($self->{_ex_charset} || "");
+	HTML::Template::_commit_to_cache(@_);
+}
 
 package HTML::Template::Ex::DummyObject;
 sub new { bless {}, shift }
@@ -115,6 +188,7 @@ sub new { bless {}, shift }
 1;
 
 __END__
+
 
 =head1 NAME
 
@@ -125,6 +199,7 @@ __END__
 
  package MyProject;
  use CGI;
+ use Jcode;
  use HTML::Template::Ex;
 
  my $cgi = CGI->new;
@@ -170,6 +245,7 @@ __END__
  my $tmpl= HTML::Template::Ex->new($self, {
   setup_env=> 1,
   scalarref=> \$template,
+  encoder  => sub { Jcode->new($_[0])->euc },
   # ... other 'HTML::Template' options.
   });
 
@@ -315,6 +391,7 @@ B<When you do output.>
 
 =back
 
+
 =head1 METHOD
 
 =head2 new
@@ -358,7 +435,23 @@ B<exec_off>
 
 ... To invalidate EX-Code temporarily, it keeps effective.
 
+B<encoder>
+
+... The CODE reference to keep the character-code of the template to be constant can be defined.
+
+* When the template made from a different character-code exists together, it finds it useful.
+
 =back
+
+=back
+
+=head2 charset
+
+=over 4
+
+=item *
+
+The value can be referred to when charset can be acquired from <meta ... content="text/html; charset=[Character set]"> in the template read. 
 
 =back
 
@@ -374,6 +467,7 @@ Please refer to the document of HTML::Template for details.
 
 =back
 
+
 =head1 NOTES
 
 =over 4
@@ -384,33 +478,19 @@ B<A>bout the option to give to the constructor.
 
 global_vars, compulsorily becomes effective.
 die_on_bad_params, strict, file_cache, shared_cache, compulsorily becomes invalid.
-cache, is being compulsorily invalidated now. 
+It came to be able to specify cache from v0.03.
 
 =item *
 
 B<A>bout order by which EX-Code is evaluated.
 
-Though it is sequentially evaluated on usually. The priority level lowers more than EX-Code in the template that is included, and read mainly described when included as for <tmpl_include *NAME>.
+This problem had been improved from v0.03 before though the processing order became complex when <TMPL_INCLUDE *NAME> existed.
 
-B<Example of template(1).>
-
-  <div><tmpl_ex> "tmpl-1: ". ++$_[0]->{mycount} </tmpl_ex></div>
-  <tmpl_include name="template(2)">
-  <div><tmpl_ex> "tmpl-2: ". ++$_[0]->{mycount} </tmpl_ex></div>
-
-B<Example of template(2).>
-
-  <div><tmpl_ex> "inc-1: ". ++$_[0]->{mycount} </tmpl_ex></div>
-
-B<When you do output.>
-
-  <div>tmpl-1: 1</div>
-  <div>inc-1: 3</div>
-  <div>tmpl-2: 2</div>
+Processing is done in order of <TMPL_EX>'s appearing regardless of the presence of <TMPL_INCLUDE *NAME>.
 
 =item *
 
-B<s>trict code is demanded EX-Code.  Otherwise, the error is output or even if the error is not output, the record will remain in the error log of HTTPD. 
+B<S>trict code is demanded EX-Code.  Otherwise, the error is output or even if the error is not output, the record will remain in the error log of HTTPD. 
 
 =item *
 
@@ -421,6 +501,7 @@ B<M>oreover, please do not write the code that does exit on the way. Because it 
 B<L>et's have it not put on the place where the template is seen from WEB though it is a thing that not is to saying as it....
 
 =back
+
 
 =head1 WARNING
 

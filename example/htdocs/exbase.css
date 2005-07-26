@@ -1,7 +1,20 @@
 /* -- $Id: exbase.css,v 1.1 2005/07/21 16:09:10 Lushe Exp $ -- */
 
-body { margin:0; }
-img  { border:0; }
+body {
+ margin:0;
+ background:url('/img/ex-bg.gif') repeat-x;
+ color:#555;
+ font-size:0.9em;
+ }
+a {
+ text-decoration:none;
+ color:#057;
+ }
+a:hover {
+ color:#00F;
+ text-decoration:underline;
+ }
+img { border:0; }
 
 .textField {
  border:#AAA solid 1px;
@@ -13,13 +26,81 @@ img  { border:0; }
  background:#EEE;
  border:#777 solid 1px;
  }
-
 .pageHeader {
- padding:3 0 0 20;
- background:#069;
+ height:57px;
+ padding:10 0 0 20;
  color:#FFF;
- font:bold 3.0em Times;
- border-bottom:#036 solid 1px;
+ font:bold 35px Times;
+ white-space:nowrap;
+ position:absolute;
+ left:170;
+ }
+.adsLinkTop {
+ top:70;
+ float:left;
+ position:relative;
+ }
+.pageInfo {
+ position:relative;
+ top:60; left:15;
+ margin:15;
+ }
+.pageTitle {
+ margin:3 3 10 0;
+ white-space:nowrap;
+ font:bold 20px Tahoma;
+ }
+.contents {
+ padding:5;
+ margin:10 10 30 10;
+ background:#EEE;
+ border:#AAA solid 1px;
+ }
+.topic2 {
+ color:#069;
+ margin:3 3 5 0;
+ }
+.topic2 a {
+ color:#069;
+ line-height:21px;
+ font:bold 20px Tahoma;
+ }
+.topic3 {
+ margin:3 3 7 0;
+ color:#069;
+ white-space:nowrap;
+ line-height:18px;
+ font:bold 17px Tahoma;
+ }
+.topic4 {
+ margin:2 2 10 0;
+ color:#069;
+ white-space:nowrap;
+ line-height:15px;
+ font:bold 14px Tahoma;
+ }
+.topicInfo {
+ font:normal 13px 'Courier New',sans-serif;
+ }
+.code {
+ width:75%;
+ margin:5 0 20 0;
+ padding:7;
+ font-size:14px;
+ white-space:pre;
+ background:#FBF5EB;
+ border:#FFB572 dotted 1px;
+ border-left:#FFB572 solid 3px;
+ border-right:0;
+ }
+.mainBody {
+ margin-bottom:15;
+ padding:0 15 0 5;
+ clear:both;
+ position:absolute;
+ top:180;
+ left:140;
+ border-left:#CCC solid 1px;
  }
 .postingForm {
  margin:10;
@@ -63,12 +144,21 @@ img  { border:0; }
  font:bold 1.3em Times,sans-serif;
  border:#95816C solid 3px;
  }
+.toHome {
+ width:140;
+ padding:3;
+ background:#E9F7FF;
+ display:block;
+ white-space:nowrap;
+ font:bold 18px Tahoma;
+ }
 .scriptVersion {
- padding-right:20;
- text-align:right;
+ margin-top:20px;
+ padding-right:10;
+ border-top:#069 solid 2px;
  }
 .scriptVersion a {
- color:#333;
+ color:#069;
  text-decoration:none;
  font:bold 12px Times,sans-serif;
  }

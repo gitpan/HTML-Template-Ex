@@ -1,5 +1,18 @@
 Revision history for Perl extension HTML::Template::Ex.
 
+0.03
+	- When the template was read, the character-code can have been changed.
+	  It is related to constructor's option 'encoder'.
+
+	- Charset of the read template was obtained.
+	  The 'charset' method of the relation is added.
+
+	- EX-Code was evaluated at output.
+
+	- The problem concerning dispatching priority was canceled.
+	  It is processed in order of <TMPL_EX> appearing from the template regardless
+	  of the presence of <TMPL_INCLUDE *NAME>. 
+
 0.02
 	- The module is not updated.
 	  Because an attached file was too rude, it corrected it.
