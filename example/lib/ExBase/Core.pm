@@ -3,7 +3,7 @@ package ExBase::Core;
 # Copyright 2004 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno <mizuno@beeflag.com>
 #
-# $Id: Core.pm,v 1.1 2005/07/26 19:44:44 Lushe Exp $
+# $Id: Ex.pm,v 1.1 2005/07/21 15:13:10 Lushe Exp $
 #
 use strict;
 use CGI;
@@ -11,8 +11,8 @@ use Jcode;
 use FileHandle;
 use HTML::Template::Ex;
 
-our $VERSION = q$0.02$;
-our $REVISION= q$Id: Core.pm,v 1.1 2005/07/26 19:44:44 Lushe Exp $;
+our $VERSION = q$0.04$;
+our $REVISION= q$Id: base.cgi,v 1.2 2005/07/21 16:12:28 Lushe Exp $;
 
 sub REVISION { $REVISION }
 sub eucConv  { defined($_[1]) ? Jcode->new($_[1])->euc: "" }
@@ -20,8 +20,10 @@ sub cgi { $_[0]->{cgi} }
 
 sub run {
 	my($class, $conf, $apr)= @_;
-	my $cgi = $conf->{cgi}= CGI->new($apr);
 	my $base= bless $conf, $class;
+	my $cgi = $base->{cgi}= CGI->new($apr);
+	$base->{options}{encoder}
+	  and $base->{options}{encoder}= sub { $base->eucConv(@_) };
 	my($path, $file);
 	$conf->{___ApacheHandler} ? do {
 		($path, $file)= $base->pathCuter($ENV{REQUEST_URI});
@@ -31,7 +33,6 @@ sub run {
 		 ($ENV{QUERY_STRING} && $ENV{QUERY_STRING}=~/^([^\&\;]+)/)
 		 ? $base->pathCuter($1): ('/', $base->{indexName});
 	 };
-	$cgi->charset($conf->{charset});
 	$file=~s{\.htm$} [.html];
 	(-e "$base->{VRsite}$path$file" && -f _)
 	 ? do { $base->execute($cgi, $path, $file) }
@@ -55,28 +56,38 @@ sub execute {
 		$Vars->{$name}= $base->eucConv($value);
 	}
 	my @path= ("$base->{VRsite}$path", @{$base->{options}{path}});
-	$base->{___tpOptions}=
-	{ path=> \@path, filename => $file, associate=> [$cgi] };
+	my %options= %{$base->{options}};
+	$options{path}     = \@path;
+	$options{filename} = $file;
+	$options{associate}= [$cgi];
 	my $tmpl;
-	eval{ $tmpl= HTML::Template::Ex->new($base, $base->{___tpOptions}) };
+	eval{ $tmpl= HTML::Template::Ex->new($base, \%options) };
 	$@ ? do {
+		$cgi->charset($base->{charset});
 		print $cgi->header, "Internal Server Error: $@";
 	 }: do {
+		$base->{sendCharset}= $tmpl->charset || $base->{charset};
+		$cgi->charset($base->{sendCharset});
 		$tmpl->param({
 		 title=> $base->{title},
 		 cgiPath => $base->{cgiPath},
 		 baseRoot=> $base->{baseRoot},
 		 siteRoot=> $base->{siteRoot},
-		 currentUri=> $base->{currentUri},
-		 currentPage=> $base->{currentPage},
-		 scriptVersion=> sub { $base->scriptVersion },
-		 supportURL=> 'http://exbase.luuu.net/',
+		 currentUri    => $base->{currentUri},
+		 currentPage   => $base->{currentPage},
+		 scriptVersion => sub { $base->scriptVersion },
+		 supportURL    => 'http://exbase.luuu.net/',
+		 publishCharset => $base->{sendCharset},
+		 publishLanguage=> $base->{language},
 		 });
 		$send->($base, $cgi, $tmpl);
 	 };
 }
 sub sendContent {
-	print $_[1]->header, $_[2]->output;
+	my($base, $cgi, $tmpl)= @_;
+	my $code= $base->{convCodes}{lc($base->{sendCharset})}
+	|| do { return print $cgi->header, $tmpl->output };
+	print $cgi->header, Jcode->new($tmpl->output, 'euc')->$code;
 }
 sub sendDeflateContent {
 }
@@ -88,6 +99,7 @@ sub fileOpen {
 sub pathCuter {
 	my $base= shift;
 	my $path= shift || return ("/", $base->{indexName});
+	$path=~s/\?.+//;
 	my($dir, $file)=
 	  $path=~m{^(/.*?)([^/]+)$} ? ($1, $2): ($path, $base->{indexName});
 	(($dir || '/'), $file);

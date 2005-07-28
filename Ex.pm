@@ -3,7 +3,7 @@ package HTML::Template::Ex;
 # Copyright 2004 Bee Flag, Corp. All Rights Reserved.
 # Masatoshi Mizuno <mizuno@beeflag.com>
 #
-# $Id: Ex.pm,v 1.2 2005/07/26 19:39:35 Lushe Exp $
+# $Id: Ex.pm,v 1.3 2005/07/28 09:51:24 Lushe Exp $
 #
 use 5.004;
 use strict;
@@ -12,7 +12,7 @@ use base qw(HTML::Template);
 use Digest::MD5 qw(md5_hex);
 use Carp qw(croak);
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 my $GetCharSetRegix=
  q{<meta.+?content=[\'\"]text/html\s*\;\s*charset=([A-Za-z0-9\-_]+)[\'\"].*?/?\s*>};
@@ -32,15 +32,15 @@ sub new {
 	$opt{die_on_bad_params}= $opt{strict}= $opt{file_cache}= $opt{shared_cache}= 0;
 	##
 	exists($opt{filter}) and do {
-		ref($opt{filter}) eq 'CODE'
-		 ? do { $opt{filter}= [{ format=> 'scalar', sub=> $opt{filter} }] }:
-		ref($opt{filter}) eq 'HASH'
-		 ? do { $opt{filter}= [$opt{filter}] }:
-		ref($opt{filter}) ne 'ARRAY'
-		 ? do { croak __PACKAGE__.q{::new: Bad format for 'filter'} }
-		 : do {};
+		if    (ref($opt{filter}) eq 'CODE')
+		  { $opt{filter}= [{ format=> 'scalar', sub=> $opt{filter} }] }
+		elsif (ref($opt{filter}) eq 'HASH')
+		  { $opt{filter}= [$opt{filter}] }
+		elsif (ref($opt{filter}) ne 'ARRAY')
+		  { croak __PACKAGE__.q{::new: Bad format for 'filter'} }
 	 };
 	my($self, %param, %mark, %order, %temp);
+	$opt{_ex_base_object}= $base;
 	$opt{_ex_params}= \%param;
 	$opt{_ex_orders}= \%order;
 	$opt{_ex_mark}  = \%mark;
@@ -48,8 +48,6 @@ sub new {
 		for my $key (keys %ENV)
 		{ $param{"env_$key"}= sub { $ENV{$key} || "" } }
 	 };
-	$opt{_ex_ident}= substr(md5_hex(time(). {}. rand()), 0, 32);
-	$opt{_ex_base_object}= $base;
 	my $filter= $opt{exec_off}
 	 ? sub { &_offFilter(\%param, @_) }
 	 : sub { &_exFilter($base, \%opt, \%temp, @_) };
@@ -62,7 +60,6 @@ sub new {
 sub output {
 	my($self)= @_;
 	my $parse_stack= $self->{parse_stack};
-	my $param_map  = $self->{param_map};
 	my $options    = $self->{options};
 	my($ex_mark, $ex_param, $ex_order);
 	$options->{cache} ? do {
@@ -74,34 +71,37 @@ sub output {
 		$ex_param= $options->{_ex_params} || {};
 		$ex_order= $options->{_ex_orders} || {};
 	 };
-	$self->param($ex_mark);
+	HTML::Template::param($self, $ex_mark);
 	my $base = $options->{_ex_base_object};
 	my %param= %$ex_param;
-	my $cnt;
-	for my $v (@$parse_stack) {
-		ref($v) eq 'HTML::Template::VAR' and do {
-			my $hash= $ex_order->{$$v} || next;
-			++$cnt;
-			my $result;
-			eval{ $result= $hash->{function}->($base, \%param) };
-			($@ && $@=~/(.+)/) ? do {
-				my $errstr= $1;
-				$errstr=~s{\s+in use at .+?/HTML/Template/Ex.pm line \d+} [];
-				$errstr=~s{\s+<GEN0> line \d+\.\s*} []i;
-				$errstr=~s{\s+\(eval \d+\)} []i;
-				$param{$$v}= qq{<div style="$ErrstrStyle">}
-				.  &_escape_html($errstr). qq{ from &lt;TMPL_EX($cnt)&gt;</div>};
-			 }: do {
-				ref($result) eq 'ARRAY' ? do {
-					$param{$$v}= "";
-					$hash->{key_name} and $param{$hash->{key_name}}= $result;
+	{
+		$options->{no_strict_exec} and do { no strict };
+		my $cnt;
+		for my $v (@$parse_stack) {
+			(ref($v) eq 'HTML::Template::VAR' && $$v) and do {
+				my $hash= $ex_order->{$$v} || next;
+				++$cnt;
+				my $result;
+				eval{ $result= $hash->{function}->($base, \%param) };
+				($@ && $@=~/(.+)/) ? do {
+					my $errstr= $1;
+					$errstr=~s{\s+in use at .+?/HTML/Template/Ex.pm line \d+} [];
+					$errstr=~s{\s+<GEN0> line \d+\.\s*} []i;
+					$errstr=~s{\s+\(eval \d+\)} []i;
+					$param{$$v}= qq{<div style="$ErrstrStyle">}
+					.  &_escape_html($errstr). qq{ from &lt;TMPL_EX($cnt)&gt;</div>};
 				 }: do {
-					$param{$$v}= $hash->{hidden} ? "": ($result || "");
-					$hash->{key_name} and $param{$hash->{key_name}}= $result;
+					ref($result) eq 'ARRAY' ? do {
+						$param{$$v}= "";
+						$hash->{key_name} and $param{$hash->{key_name}}= $result;
+					 }: do {
+						$param{$$v}= $hash->{hidden} ? "": ($result || "");
+						$hash->{key_name} and $param{$hash->{key_name}}= $result;
+					 };
 				 };
 			 };
-		 };
-	}
+		}
+	 };
 	HTML::Template::param($self, \%param);
 	my $result= HTML::Template::output(@_);
 	$options->{cache} and do {
@@ -126,8 +126,11 @@ sub _escape_html {
 }
 sub _call_filters {
 	my($self, $html)= @_;
-	$self->{options}{encoder} and $self->{options}{encoder}->($html);
 	$$html=~m{$GetCharSetRegix}i and $self->{_ex_charset}= $1;
+	if ($self->{options}{auto_encoder})
+	  { $self->{_ex_charset} and $self->{options}{auto_encoder}->($html) }
+	elsif ($self->{options}{encoder})
+	  { $self->{options}{encoder}->($html) }
 	HTML::Template::_call_filters(@_);
 }
 sub _exFilter {
@@ -165,7 +168,8 @@ sub _replaceEx {
 		$tag=~/escape=[\"\']?([^\s\"\']+)/  and $escape = qq{ escape="$1"};
 		$tag=~/default=[\"\']?([^\s\"\']+)/ and $default= qq{ default="$1"};
 	 };
-	my $ident= qq{__\$ex_$opt->{_ex_ident}\$}. (++$temp->{count}). q{$__};
+	my $ident= '__$ex_'. &_get_ident_id($opt) .'$'. (++$temp->{count}). '$__';
+	$opt->{no_strict_exec} and $code= "no strict;\n". $code;
 	eval"\$exec= sub { $code }";
 	$attr{function}= sub { $exec->(@_) || "" };
 	$opt->{_ex_orders}{$ident}= \%attr;
@@ -179,6 +183,12 @@ sub _commit_to_cache {
 	push @{$self->{parse_stack}}, $self->{options}{_ex_mark};
 	push @{$self->{parse_stack}}, ($self->{_ex_charset} || "");
 	HTML::Template::_commit_to_cache(@_);
+}
+sub _get_ident_id {
+	$_[0]->{___ident_id} || do {
+		$_[0]->{___ident_id}= substr(md5_hex(time(). {}. rand()), 0, 32);
+		$_[0]->{___ident_id};
+	 };
 }
 
 package HTML::Template::Ex::DummyObject;
@@ -435,11 +445,27 @@ B<exec_off>
 
 ... To invalidate EX-Code temporarily, it keeps effective.
 
+=item *
+
 B<encoder>
 
 ... The CODE reference to keep the character-code of the template to be constant can be defined.
 
 * When the template made from a different character-code exists together, it finds it useful.
+
+=item *
+
+B<auto_encoder>
+
+... Only when the character set was able to be picked up from the template, the code reference passed by this option is started. 
+
+* When this option is set, the 'encoder' option becomes meaningless.
+
+=item *
+
+B<no_strict_exec>
+
+... When this option becomes effective, the check on the syntax of EX-Code becomes sweet.
 
 =back
 
@@ -530,5 +556,7 @@ This program is free software; you can redistribute it and/or modify it under
 =head1 AUTHOR
 
 Masatoshi Mizuno, <mizunoE<64>beeflagE<46>com>
+
+L<http://exbase.luuu.net/>
 
 =cut

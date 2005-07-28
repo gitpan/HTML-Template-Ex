@@ -1,4 +1,3 @@
-<!-- $Id: document.html,v 1.1 2005/07/26 19:41:50 Lushe Exp $ -->
 <html>
 <head>
 <tmpl_ex hidden=1>
@@ -51,6 +50,12 @@
 <li><a href="#COPYRIGHT">COPYRIGHT</a></li>
 <li><a href="#AUTHOR">AUTHOR</a></li>
 </ul>
+</div>
+
+<div style="margin-bottom:30px;">
+<tmpl_include name=hearf-banner-conf.tmpl>
+<tmpl_include name=HearfBanner.code>
+<tmpl_var name=hearf_banner_disp>
 </div>
 
 <a name="NAME"></a>
@@ -334,9 +339,16 @@ Another for HTML::Template can specify the option to evaluate to following origi
   <p><b>exec_off</b></p>
   ...  To invalidate EX-Code temporarily, it keeps effective.
 
-  <p><b>exec_off</b></p>
+  <p><b>encoder</b></p>
   ...  The CODE reference to keep the character-code of the template to be constant can be defined.
   <p>* When the template made from a different character-code exists together, it finds it useful.</p>
+
+  <p><b>auto_encoder</b></p>
+  ...  Only when the character set was able to be picked up from the template, the code reference passed by this option is started.
+  <p>* When this option is set, the 'encoder' option becomes meaningless.</p>
+
+  <p><b>no_strict_exec</b></p>
+  ...  When this option becomes effective, the check on the syntax of EX-Code becomes sweet.
 
 <a name="charset"></a>
 <h3 class="topic3">charset</h3>

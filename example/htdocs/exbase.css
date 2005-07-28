@@ -43,7 +43,7 @@ img { border:0; }
 .pageInfo {
  position:relative;
  top:60; left:15;
- margin:15;
+ margin:0; padding:5px;
  }
 .pageTitle {
  margin:3 3 10 0;

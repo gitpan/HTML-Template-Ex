@@ -1,5 +1,16 @@
 Revision history for Perl extension HTML::Template::Ex.
 
+0.04
+	- Addition of '_get_ident_id' internal function.
+
+	- It was made to encode only when the character set was able to be picked up from the template.
+	  It is related to constructor's option 'auto_encoder'.
+
+	- It came to be able to sweeten the check on the syntax of EX-Code.
+	  It is related to constructor's option 'no_strict_exec'.
+
+	- Trifling bug fix.
+
 0.03
 	- When the template was read, the character-code can have been changed.
 	  It is related to constructor's option 'encoder'.

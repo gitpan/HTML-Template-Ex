@@ -1,4 +1,4 @@
-<!-- $Id: guestbook.html,v 1.1 2005/07/26 19:41:50 Lushe Exp $ -->
+<!-- $Id: guestbook.html,v 1.2 2005/07/28 09:54:13 Lushe Exp $ -->
 <html>
 <head>
 <tmpl_var name="refresh_header">
@@ -32,6 +32,12 @@
 </div>
 
 <div class="mainBody">
+
+<div style="margin-bottom:30px;">
+<tmpl_include name=hearf-banner-conf.tmpl>
+<tmpl_include name=HearfBanner.code>
+<tmpl_var name=hearf_banner_disp>
+</div>
 
  <table class="postingForm">
  <form method="post" action="<tmpl_var name=currentUri>">
