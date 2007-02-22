@@ -1,0 +1,19 @@
+abstract: The Perl code is operated in the template for HTML::Template.
+author: Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
+build_requires: 
+  Test::More: 0
+  Test::Pod: 0
+distribution_type: module
+generated_by: Module::Install version 0.64
+license: perl
+name: HTML-Template-Ex
+no_index: 
+  directory: 
+    - inc
+    - t
+requires: 
+  Devel::StackTrace: 0
+  Digest::MD5: 0
+  HTML::Entities: 0
+  HTML::Template: 0
+version: 0.05

@@ -1,7 +1,0 @@
-<tmpl_ex hidden="1">
-	my($self, $param)= @_;
-	my $array= $self->{banner}{hearf} || return "";
-	(! ref($array) || ! @$array) and return "";
-	my $max= $#{$array} || 0;
-	$param->{hearf_banner_disp}= $array->[int(rand($max))];
-</tmpl_ex>
