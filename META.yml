@@ -16,4 +16,4 @@ requires:
   Digest::MD5: 0
   HTML::Entities: 0
   HTML::Template: 0
-version: 0.05
+version: 0.06

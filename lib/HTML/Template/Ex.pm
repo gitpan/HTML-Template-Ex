@@ -3,7 +3,7 @@ package HTML::Template::Ex;
 # Copyright (C) 2007 Bee Flag, Corp, All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Ex.pm 221 2007-02-22 13:54:45Z lushe $
+# $Id: Ex.pm 225 2007-02-22 15:11:05Z lushe $
 #
 use strict;
 use warnings;
@@ -11,7 +11,7 @@ use base qw/HTML::Template/;
 use Carp qw/croak/;
 use Digest::MD5 qw/md5_hex/;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 my $ErrstrStyle= <<END_OF_STYLE;
 padding    : 5px;
