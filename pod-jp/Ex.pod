@@ -1,4 +1,6 @@
-﻿=head1 NAME
+﻿=encoding utf-8
+
+=head1 NAME
 
 HTML::Template::Ex - The Perl code is operated in the template for HTML::Template.
 
@@ -249,7 +251,7 @@ HTML::Template::Ex が評価するタグを全て無効にして消し去りま�
 
 その他のメソッドについてはL<HTML::Template>のドキュメントを参照して下さい。
 
-=head2 NOTES
+=head1 NOTES
 
 HTML::Template オプションで使用するキャッシュの種類によっては動作不良を起こす
 事があります。

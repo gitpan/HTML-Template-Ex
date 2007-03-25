@@ -3,7 +3,7 @@ package HTML::Template::Ex;
 # Copyright (C) 2007 Bee Flag, Corp, All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Ex.pm 225 2007-02-22 15:11:05Z lushe $
+# $Id: Ex.pm 297 2007-03-25 14:34:59Z lushe $
 #
 use strict;
 use warnings;
@@ -11,7 +11,7 @@ use base qw/HTML::Template/;
 use Carp qw/croak/;
 use Digest::MD5 qw/md5_hex/;
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 my $ErrstrStyle= <<END_OF_STYLE;
 padding    : 5px;
@@ -449,11 +449,19 @@ When charset was able to be acquired from the template, encoder is processed.
 
 When charset was able to be acquired from the template, the value is returned.
 
+=head2 initStyle ([STYLE])
+
+The output style etc. when the error occurs are defined.
+
+=head2 output
+
+Contents are output.
+
 =head2 other
 
 Please refer to the document of L<HTML::Template> for other methods.
 
-=head2 NOTES
+=head1 NOTES
 
 There is causing the defective operation according to the kind of the cash used
 by HTML::Template option.

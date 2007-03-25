@@ -3,23 +3,23 @@ package HTML::Template::Ex::Filter;
 # Copyright (C) 2007 Bee Flag, Corp, All Rights Reserved.
 # Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
 #
-# $Id: Filter.pm 221 2007-02-22 13:54:45Z lushe $
+# $Id: Filter.pm 297 2007-03-25 14:34:59Z lushe $
 #
 use strict;
 use warnings;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 sub set {
 	{
 	 format=> 'scalar',
 	 sub=> sub {
 		my $text= shift;
-		$$text=~s{\[\%\s*([^\%]+)\s*\%\]} [ &filter($1) ]sge;
+		$$text=~s{\[\%\s*([^\%]+)\s*\%\]} [ &__filter($1) ]sge;
 	  },
 	 };
 }
-sub filter {
+sub __filter {
 	local($_)= @_;
 	return
 	/^(?:var|\=)\s*(\S+)/i ? do {

@@ -10,7 +10,9 @@ requires 'Digest::MD5';
 requires 'Devel::StackTrace';
 
 build_requires 'Test::More';
+build_requires 'Test::Perl::Critic';
 build_requires 'Test::Pod';
+build_requires 'Test::Pod::Coverage';
 
 use_test_base;
 auto_include;
