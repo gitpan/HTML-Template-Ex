@@ -1,21 +1,31 @@
-abstract: The Perl code is operated in the template for HTML::Template.
-author: Masatoshi Mizuno E<lt>mizunoE<64>bomcity.comE<gt>
-build_requires: 
+---
+name: HTML-Template-Ex
+version: 0.08
+author:
+  - 'Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>'
+abstract: lib/HTML/Template/Ex.pm
+license: perl
+resources:
+  license: http://dev.perl.org/licenses/
+requires:
+  Devel::StackTrace: 1.1
+  Digest::MD5: 2.3
+  HTML::Entities: 3.5
+  HTML::Template: 2.9
   Test::More: 0
   Test::Perl::Critic: 0
   Test::Pod: 0
   Test::Pod::Coverage: 0
-distribution_type: module
-generated_by: Module::Install version 0.64
-license: perl
-name: HTML-Template-Ex
-no_index: 
-  directory: 
-    - inc
-    - t
-requires: 
-  Devel::StackTrace: 0
-  Digest::MD5: 0
-  HTML::Entities: 0
-  HTML::Template: 0
-version: 0.07
+provides:
+  HTML::Template::Ex:
+    file: lib/HTML/Template/Ex.pm
+    version: 0.08
+  HTML::Template::Ex::DummyObject:
+    file: lib/HTML/Template/Ex.pm
+  HTML::Template::Ex::Filter:
+    file: lib/HTML/Template/Ex/Filter.pm
+    version: 0.02
+generated_by: Module::Build version 0.2805
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.2.html
+  version: 1.2

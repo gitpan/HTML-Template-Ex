@@ -11,7 +11,7 @@ use base qw/HTML::Template/;
 use Carp qw/croak/;
 use Digest::MD5 qw/md5_hex/;
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 my $ErrstrStyle= <<END_OF_STYLE;
 padding    : 5px;
